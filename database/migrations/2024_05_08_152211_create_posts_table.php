@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('title');
             $table->text('excerpt')->nullable();
             $table->boolean('published')->default(0);
+            $table->boolean('is_deleted')->default(0);
             $table->string('meta_title')->nullable();
             $table->text('meta_keywords')->nullable();
             $table->text('meta_description')->nullable();

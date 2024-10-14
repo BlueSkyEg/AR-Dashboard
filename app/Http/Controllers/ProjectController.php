@@ -6,6 +6,8 @@ use App\Models\Project;
 use App\Services\CrudService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Response;
+use App\Http\Resources\ProjectBriefResource;
+use App\Http\Resources\ProjectResource;
 
 class ProjectController extends Controller
 {
@@ -17,19 +19,39 @@ class ProjectController extends Controller
     }
 
     /**
-     * Read a specific project.
+     * List all projects with pagination and optional filters.
      *
-     * @param int $id
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function index(Request $request)
+    {
+        // Get query parameters from the request
+        $categorySlug = $request->get('category_slug');
+        $perPage = (int) $request->get('per_page', 10);
+        $published = $request->has('published') ? filter_var($request->get('published'), FILTER_VALIDATE_BOOLEAN) : null;
+
+        // Fetch projects using the generic service method
+        $projects = $this->crudService->getAll(Project::class, $perPage, $categorySlug, $published);
+
+        if ($projects->count() > 0) {
+            return response()->pagination('Projects retrieved successfully.', ProjectBriefResource::collection($projects), $projects);
+        }
+
+        return response()->error('No projects found', null, 404);
+    }
+
+    /**
+     * Read a specific project by ID
+     * @param int|string $identifier
      * @return \Illuminate\Http\JsonResponse
      */
     public function show($id)
     {
         $project = $this->crudService->read(new Project, $id);
-
         if ($project) {
-            return response()->success('Project retrieved successfully', $project);
+            return response()->success('Project retrieved successfully.', new ProjectResource($project));
         }
-
         return response()->error('Project not found', null, 404);
     }
 
@@ -69,20 +91,4 @@ class ProjectController extends Controller
         return response()->error('Failed to delete project', null, 400);
     }
 
-    /**
-     * List all projects with pagination.
-     *
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function index(Request $request)
-    {
-        $projects = Project::paginate($request->get('per_page', 10));
-
-        if ($projects->count() > 0) {
-            return response()->pagination('Projects retrieved successfully', $projects->items(), $projects);
-        }
-
-        return response()->error('No projects found', null, 404);
-    }
 }

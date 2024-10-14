@@ -22,6 +22,7 @@ class Post extends Model
         'title',
         'excerpt',
         'published',
+        'is_deleted',
         'meta_title',
         'meta_keywords',
         'meta_description',
