@@ -100,7 +100,7 @@ class CrudService
      */
     public function update(Model $model, int $id, array $data): ?Model
     {
-        $record = $model->find($id);
+        $record = $this->read($model, $id);
 
         if ($record) {
             $record->update($data);
