@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
 use App\Enums\PostTypeEnum;
+use Illuminate\Support\Facades\Log;
 
 class CrudService
 {
@@ -44,7 +45,6 @@ class CrudService
                 })
                 ->with('post.categories', 'featuredImage');
             })
-            ->whereRelation('post', 'is_deleted', '=', 0) // Ensure 'is_deleted' is false in the 'post' relation
             ->orderBy('order', 'asc')
             ->paginate($perPage);
     }
@@ -80,7 +80,6 @@ class CrudService
                 ->when($published, function (Builder $query) {
                     return $query->whereRelation('post', 'published', '=', 1);
                 })
-                ->whereRelation('post', 'is_deleted', '=', 0) // Ensure 'is_deleted' is false in the 'post' relation
                 ->with([
                     'post' => ['images', 'categories', 'contents'],
                     'featuredImage',
@@ -111,7 +110,7 @@ class CrudService
     }
 
     /**
-     * Generic function to soft delete a record by updating the 'is_deleted' column in the related 'post'.
+     * Generic function to soft delete a record by updating the 'deleted_at' column in the related 'post'.
      *
      * @param Model $model
      * @param int $id
@@ -119,17 +118,30 @@ class CrudService
      */
     public function delete(Model $model, int $id): bool
     {
+        // Find the record by its ID
         $record = $model->find($id);
 
-        if ($record && $record->post) {
-            // Perform a soft delete by updating the 'is_deleted' column in the related 'post'
-            $record->post->is_deleted = true;
-
-            if ($record->post->save()) {
-                return true;
-            }
+        if (!$record) {
+            Log::error("Model not found with ID: $id");
+            return false;
         }
+
+        // Soft delete the post if it exists
+        if ($record->post && !$record->post->delete()) {
+            Log::error("Failed to soft delete post for post ID: $id");
+            return false;
+        }
+
+        // Now delete (soft delete) the model itself
+        if ($record->delete()) {
+            Log::info("Successfully soft deleted model with ID: $id");
+            return true;
+        } else {
+            Log::error("Failed to soft delete model with ID: $id");
+        }
+
         return false;
     }
+
 
 }

@@ -9,6 +9,7 @@ use App\Models\PostCategory;
 use App\Models\PostContent;
 use App\Models\Project;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -16,13 +17,12 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Post extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'title',
         'excerpt',
         'published',
-        'is_deleted',
         'meta_title',
         'meta_keywords',
         'meta_description',
