@@ -20,9 +20,21 @@ class ImageService
      */
     public function createImage(array $attributes): Image
     {
-        return Image::updateOrCreate($attributes);
+        return Image::create($attributes);
     }
 
+    /**
+     * Update an existing image record.
+     *
+     * @param Image $image
+     * @param array $attributes
+     * @return Image
+     */
+    public function updateImage(Image $image, array $attributes): Image
+    {
+        $image->update($attributes);
+        return $image;
+    }
 
     /**
     * Save Image By Url
@@ -39,4 +51,33 @@ class ImageService
 
         return $imagePath;
     }
+
+    public function createOrUpdateImage(array $data, Model $existingModel, Model $post)
+    {
+        if (isset($data['featured_image'])) {
+            $existingImage = $existingModel->featuredImage;
+            if ($existingImage) {
+                if ($data['featured_image']['src'] !== $existingImage->src) {
+                    $featuredImagePath = $this->saveImageByUrl($data['featured_image']['src']);
+                    $existingImage->src = $featuredImagePath;
+                    Storage::delete("images/{$existingImage->src}");
+                }
+                if (isset($data['featured_image']['alt_text'])) {
+                    $existingImage->alt_text = $data['featured_image']['alt_text'];
+                }
+                $existingImage->save();
+            } else {
+                $featuredImagePath = $this->saveImageByUrl($data['featured_image']['src']);
+                $featuredImageData = [
+                    'src' => $featuredImagePath,
+                    'alt_text' => $data['featured_image']['alt_text']
+                ];
+                $newImage = $this->createImage($featuredImageData);
+                $post->images()->attach($newImage->id);
+                $existingModel->featured_image_id = $newImage->id;
+                $post->save();
+            }
+        }
+    }
+
 }

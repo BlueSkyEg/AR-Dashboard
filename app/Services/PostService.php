@@ -18,6 +18,19 @@ class PostService
      */
     public function createPost(array $attributes): Post
     {
-        return Post::updateOrCreate($attributes);
+        return Post::create($attributes);
+    }
+
+    /**
+     * Update an existing post record.
+     *
+     * @param Post $post
+     * @param array $attributes
+     * @return Post
+     */
+    public function updatePost(Post $post, array $attributes): Post
+    {
+        $post->update($attributes);
+        return $post;
     }
 }
